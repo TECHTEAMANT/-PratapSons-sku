@@ -78,13 +78,33 @@ export default function SKUHistory() {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
 
-  const loadSubmissions = async () => {
+  const loadSubmissions = async (clearFilters = false) => {
     setIsLoading(true);
     setError(null);
     try {
+      if (clearFilters) {
+        setSearchQuery('');
+        setFilters({
+          sku: '',
+          productGroup: '',
+          productCategory: '',
+          color: '',
+          size: '',
+          style: '',
+          location: '',
+          fabric: '',
+          nature: '',
+          vendorCode: '',
+          cost: '',
+          createdBy: ''
+        });
+      }
       const data = await fetchAllSubmissions();
       setSubmissions(data);
-      setFilteredSubmissions(data);
+      // setFilteredSubmissions will be updated by the useEffect when filters change
+      if (clearFilters) {
+        setFilteredSubmissions(data);
+      }
       toast.success('SKU history loaded successfully!');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load SKU history';
@@ -136,7 +156,7 @@ export default function SKUHistory() {
 
             {/* Refresh Button */}
             <Button
-              onClick={loadSubmissions}
+              onClick={() => loadSubmissions(true)}
               disabled={isLoading}
               variant="outline"
               className="gap-2"
@@ -158,7 +178,7 @@ export default function SKUHistory() {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>{error}</span>
-              <Button variant="outline" size="sm" onClick={loadSubmissions} className="ml-4">
+              <Button variant="outline" size="sm" onClick={() => loadSubmissions()} className="ml-4">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Retry
               </Button>

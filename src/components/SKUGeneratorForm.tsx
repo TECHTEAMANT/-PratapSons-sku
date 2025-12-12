@@ -3,19 +3,14 @@ import { Send, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { toast } from "sonner";
 import { fetchDropdownData, submitSKU, type DropdownOption } from "@/services/googleSheetsService";
 import { encodeCost } from "@/utils/costEncoder";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getCurrentUser } from "@/services/authService";
 import SKUSuccessModal from "@/components/SKUSuccessModal";
+import { Combobox } from "@/components/ui/combobox";
 
 interface FormData {
   productGroup: string;
@@ -82,6 +77,11 @@ export const SKUGeneratorForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [generatedSKU, setGeneratedSKU] = useState("");
+  const [hasTriedSubmit, setHasTriedSubmit] = useState(false);
+
+  const getErrorClass = (field: keyof FormData) => {
+    return hasTriedSubmit && !formData[field] ? "border-red-500 ring-1 ring-red-500" : "";
+  };
 
   // Fetch dropdown data on component mount
   useEffect(() => {
@@ -180,9 +180,10 @@ export const SKUGeneratorForm = () => {
       formData.size || "--",
       formData.style || "---",
       locationAlias || formData.location || "---",
+      locationAlias || formData.location || "---",
       fabricAlias || formData.fabric || "---", // Fabric Alias
       natureAlias || formData.nature || "---",
-      formData.vendorCode || "------",
+      getAlias('vendorCodes', formData.vendorCode) || formData.vendorCode || "------",
       encodedCost, // Cost encoded using CRAZY WOMAN cipher
     ];
     return parts.join("-");
@@ -206,8 +207,9 @@ export const SKUGeneratorForm = () => {
 
 
   const handleSubmit = async () => {
+    setHasTriedSubmit(true);
     if (!isFormComplete()) {
-      toast.error("Please fill all required fields");
+      // Toast message removed as per user request (validation highlighting is sufficient)
       return;
     }
 
@@ -251,6 +253,7 @@ export const SKUGeneratorForm = () => {
         vendorCode: "",
         cost: "",
       });
+      setHasTriedSubmit(false);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to submit SKU";
       toast.error(errorMessage);
@@ -261,6 +264,21 @@ export const SKUGeneratorForm = () => {
 
   const updateField = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const getMissingFields = () => {
+    const missing: string[] = [];
+    if (!formData.productGroup) missing.push("Product Group");
+    if (!formData.productCategory) missing.push("Product Category");
+    if (!formData.color) missing.push("Color");
+    if (!formData.size) missing.push("Size");
+    if (!formData.style) missing.push("Style Number");
+    if (!formData.location) missing.push("Location");
+    if (!formData.fabric) missing.push("Fabric");
+    if (!formData.nature) missing.push("Nature");
+    if (!formData.vendorCode) missing.push("Vendor Code");
+    if (!formData.cost) missing.push("Cost");
+    return missing;
   };
 
   return (
@@ -299,91 +317,59 @@ export const SKUGeneratorForm = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Product Group */}
           <div className="space-y-2">
-            <Label htmlFor="productGroup">Product Group</Label>
-            <Select
+            <Label htmlFor="productGroup" className={hasTriedSubmit && !formData.productGroup ? "text-red-500" : ""}>Product Group *</Label>
+            <Combobox
+              options={dropdownData.productGroups}
               value={formData.productGroup}
               onValueChange={(v) => updateField("productGroup", v)}
               disabled={isLoading}
-            >
-              <SelectTrigger id="productGroup">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select group"} />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownData.productGroups.map((item, index) => (
-                  <SelectItem key={`pg-${index}-${item.value}`} value={item.value}>
-                    {item.label} {item.alias ? `(${item.alias})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select group"
+              error={hasTriedSubmit && !formData.productGroup}
+            />
           </div>
 
           {/* Product Category */}
           <div className="space-y-2">
-            <Label htmlFor="productCategory">Product Category</Label>
-            <Select
+            <Label htmlFor="productCategory" className={hasTriedSubmit && !formData.productCategory ? "text-red-500" : ""}>Product Category *</Label>
+            <Combobox
+              options={dropdownData.productCategories}
               value={formData.productCategory}
               onValueChange={(v) => updateField("productCategory", v)}
               disabled={isLoading}
-            >
-              <SelectTrigger id="productCategory">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select category"} />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownData.productCategories.map((item, index) => (
-                  <SelectItem key={`pc-${index}-${item.value}`} value={item.value}>
-                    {item.label} {item.alias ? `(${item.alias})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select category"
+              error={hasTriedSubmit && !formData.productCategory}
+            />
           </div>
 
           {/* Color */}
           <div className="space-y-2">
-            <Label htmlFor="color">Color</Label>
-            <Select
+            <Label htmlFor="color" className={hasTriedSubmit && !formData.color ? "text-red-500" : ""}>Color *</Label>
+            <Combobox
+              options={dropdownData.colors}
               value={formData.color}
               onValueChange={(v) => updateField("color", v)}
               disabled={isLoading}
-            >
-              <SelectTrigger id="color">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select color"} />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownData.colors.map((item, index) => (
-                  <SelectItem key={`color-${index}-${item.value}`} value={item.value}>
-                    {item.label} {item.alias ? `(${item.alias})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select color"
+              error={hasTriedSubmit && !formData.color}
+            />
           </div>
 
           {/* Size */}
           <div className="space-y-2">
-            <Label htmlFor="size">Size</Label>
-            <Select
+            <Label htmlFor="size" className={hasTriedSubmit && !formData.size ? "text-red-500" : ""}>Size *</Label>
+            <Combobox
+              options={dropdownData.sizes}
               value={formData.size}
               onValueChange={(v) => updateField("size", v)}
               disabled={isLoading}
-            >
-              <SelectTrigger id="size">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select size"} />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownData.sizes.map((item, index) => (
-                  <SelectItem key={`size-${index}-${item.value}`} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select size"
+              error={hasTriedSubmit && !formData.size}
+            />
           </div>
 
           {/* Style */}
           <div className="space-y-2">
-            <Label htmlFor="style">Style Number</Label>
+            <Label htmlFor="style" className={hasTriedSubmit && !formData.style ? "text-red-500" : ""}>Style Number *</Label>
             <Input
               id="style"
               type="text"
@@ -391,96 +377,65 @@ export const SKUGeneratorForm = () => {
               onChange={(e) => updateField("style", e.target.value)}
               placeholder="e.g., 001"
               maxLength={5}
+              className={getErrorClass("style")}
             />
           </div>
 
           {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Select
+            <Label htmlFor="location" className={hasTriedSubmit && !formData.location ? "text-red-500" : ""}>Location *</Label>
+            <Combobox
+              options={dropdownData.locations}
               value={formData.location}
               onValueChange={(v) => updateField("location", v)}
               disabled={isLoading}
-            >
-              <SelectTrigger id="location">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select location"} />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownData.locations.map((item, index) => (
-                  <SelectItem key={`loc-${index}-${item.value}`} value={item.value}>
-                    {item.label} {item.alias ? `(${item.alias})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select location"
+              error={hasTriedSubmit && !formData.location}
+            />
           </div>
 
           {/* Fabric */}
           <div className="space-y-2">
-            <Label htmlFor="fabric">Fabric</Label>
-            <Select
+            <Label htmlFor="fabric" className={hasTriedSubmit && !formData.fabric ? "text-red-500" : ""}>Fabric *</Label>
+            <Combobox
+              options={dropdownData.fabrics}
               value={formData.fabric}
               onValueChange={(v) => updateField("fabric", v)}
               disabled={isLoading}
-            >
-              <SelectTrigger id="fabric">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select fabric"} />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownData.fabrics.map((item, index) => (
-                  <SelectItem key={`fabric-${index}-${item.value}`} value={item.value}>
-                    {item.label} {item.alias ? `(${item.alias})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select fabric"
+              error={hasTriedSubmit && !formData.fabric}
+            />
           </div>
 
           {/* Nature */}
           <div className="space-y-2">
-            <Label htmlFor="nature">Nature</Label>
-            <Select
+            <Label htmlFor="nature" className={hasTriedSubmit && !formData.nature ? "text-red-500" : ""}>Nature *</Label>
+            <Combobox
+              options={dropdownData.natures}
               value={formData.nature}
               onValueChange={(v) => updateField("nature", v)}
               disabled={isLoading}
-            >
-              <SelectTrigger id="nature">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select nature"} />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownData.natures.map((item, index) => (
-                  <SelectItem key={`nature-${index}-${item.value}`} value={item.value}>
-                    {item.label} {item.alias ? `(${item.alias})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select nature"
+              error={hasTriedSubmit && !formData.nature}
+            />
           </div>
 
           {/* Vendor Code */}
           <div className="space-y-2">
-            <Label htmlFor="vendorCode">Vendor Code</Label>
-            <Select
+            <Label htmlFor="vendorCode" className={hasTriedSubmit && !formData.vendorCode ? "text-red-500" : ""}>Vendor Code *</Label>
+            <Combobox
+              options={dropdownData.vendorCodes}
               value={formData.vendorCode}
               onValueChange={(v) => updateField("vendorCode", v)}
               disabled={isLoading}
-            >
-              <SelectTrigger id="vendorCode">
-                <SelectValue placeholder={isLoading ? "Loading..." : "Select vendor"} />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownData.vendorCodes.map((item, index) => (
-                  <SelectItem key={`vendor-${index}-${item.value}`} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select vendor"
+              error={hasTriedSubmit && !formData.vendorCode}
+            />
           </div>
 
           {/* Cost */}
           <div className="space-y-2">
-            <Label htmlFor="cost">Cost</Label>
+            <Label htmlFor="cost" className={hasTriedSubmit && !formData.cost ? "text-red-500" : ""}>Cost *</Label>
             <Input
               id="cost"
               type="number"
@@ -489,6 +444,7 @@ export const SKUGeneratorForm = () => {
               placeholder="0.00"
               min="0"
               step="0.01"
+              className={getErrorClass("cost")}
             />
             {formData.cost && (
               <p className="text-xs text-muted-foreground">
@@ -519,6 +475,11 @@ export const SKUGeneratorForm = () => {
             <Send className="w-4 h-4" />
             {isSubmitting ? "Submitting..." : "Generate & Submit SKU"}
           </Button>
+          {!isFormComplete() && hasTriedSubmit && (
+            <p className="text-sm text-red-500 mt-2 text-center animate-pulse">
+              Please fill highlighted fields: {getMissingFields().join(", ")}
+            </p>
+          )}
         </div>
       </div>
       
