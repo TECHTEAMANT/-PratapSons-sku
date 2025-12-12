@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FileText, History, LogOut, User, Menu, X } from 'lucide-react';
+import { FileText, History, LogOut, User, Menu, X, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getCurrentUser, logout } from '@/services/authService';
 import { useState } from 'react';
@@ -14,6 +14,7 @@ export default function Navigation() {
   const navLinks = [
     { path: '/', label: 'Generator', icon: FileText },
     { path: '/history', label: 'History', icon: History },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   ];
 
   return (

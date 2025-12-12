@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import SKUHistory from "./pages/SKUHistory";
+import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navigation from "./components/Navigation";
 import { isAuthenticated } from "@/services/authService";
@@ -40,6 +41,7 @@ const App = () => {
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/history" element={<SKUHistory />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
                     </Routes>
                   </div>
                 </ProtectedRoute>
